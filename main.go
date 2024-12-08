@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"os"
 
 	config "github.com/Fepozopo/gator/internal/config"
 )
@@ -11,21 +11,30 @@ func main() {
 	// Read the config file
 	cfg, err := config.Read()
 	if err != nil {
-		log.Fatalf("Failed to read config: %v", err)
+		fmt.Fprintf(os.Stderr, "Error reading config: %v\n", err)
+		os.Exit(1)
 	}
-	fmt.Printf("Initial Config: %+v\n", cfg)
 
-	// Set the current user to "shane" and update the config file
-	err = cfg.SetUser("shane")
-	if err != nil {
-		log.Fatalf("Failed to update user in config: %v", err)
-	}
-	fmt.Print("Updated current_user_name to 'shane'.\n")
+	// Initialize application state
+	appState := &state{config: &cfg}
 
-	// Read the config file again and print the contents
-	cfg, err = config.Read()
-	if err != nil {
-		log.Fatalf("Failed to read config after update: %v", err)
+	// Initialize commands and register handlers
+	cmds := &commands{}
+	cmds.register("login", handlerLogin)
+
+	// Parse command-line arguments
+	if len(os.Args) < 2 {
+		fmt.Fprint(os.Stderr, "Error: not enough arguments provided\n")
+		os.Exit(1)
 	}
-	fmt.Printf("Updated Config: %+v\n", cfg)
+
+	cmdName := os.Args[1]
+	cmdArgs := os.Args[2:]
+	cmd := command{name: cmdName, args: cmdArgs}
+
+	// Run the command
+	if err := cmds.run(appState, cmd); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 }
