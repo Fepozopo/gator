@@ -33,14 +33,14 @@ func handlerRegister(s *state, cmd command) error {
 	user, err := s.db.CreateUser(context.Background(), newUser)
 	if err != nil {
 		if err.Error() == "pq: duplicate key value violates unique constraint \"users_name_key\"" {
-			return fmt.Errorf("a user with the name '%s' already exists\n", name)
+			return fmt.Errorf("a user with the name '%s' already exists", name)
 		}
 		return fmt.Errorf("failed to create user: %w\n", err)
 	}
 
 	// Set the current user in the config
 	if err := s.cfg.SetUser(user.Name); err != nil {
-		return fmt.Errorf("failed to set current user: %w\n", err)
+		return fmt.Errorf("failed to set current user: %w", err)
 	}
 
 	// Print a success message and log the user details

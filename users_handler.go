@@ -11,7 +11,7 @@ func handlerUsers(s *state, cmd command) error {
 	// Fetch all users from the database
 	users, err := s.db.GetUsers((context.Background()))
 	if err != nil {
-		return fmt.Errorf("failed to fetch users: %w\n", err)
+		return fmt.Errorf("failed to fetch users: %w", err)
 	}
 
 	// Get the currently logged-in user from the config

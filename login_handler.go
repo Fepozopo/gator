@@ -21,15 +21,15 @@ func handlerLogin(s *state, cmd command) error {
 	user, err := s.db.GetUser(context.Background(), username)
 	if err != nil {
 		if err.Error() == "sql: now rows in result set" {
-			return fmt.Errorf("user '%s' does not exist\n", username)
+			return fmt.Errorf("user '%s' does not exist", username)
 		}
-		return fmt.Errorf("failed to fetch user: %w\n", err)
+		return fmt.Errorf("failed to fetch user: %w", err)
 	}
 
 	// Set the current user in the config
 	err = s.cfg.SetUser(user.Name)
 	if err != nil {
-		return fmt.Errorf("failed to set user: %w\n", err)
+		return fmt.Errorf("failed to set user: %w", err)
 	}
 
 	fmt.Printf("Logged in as '%s'\n", username)
