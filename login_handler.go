@@ -6,7 +6,11 @@ import (
 	"fmt"
 )
 
-// handlerLogin handles the "login command".
+// handlerLogin handles the "login" command, which logs in to the given
+// username. The username is taken from the command arguments. If the username
+// does not exist in the database, an error is returned. If the username exists,
+// the user is set as the current user in the configuration, and a success
+// message is printed with the user name.
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.args) < 1 {
 		return errors.New("username is required")
