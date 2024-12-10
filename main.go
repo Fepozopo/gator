@@ -45,6 +45,7 @@ func main_helper() int {
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
 	cmds.register("reset", handlerReset)
+	cmds.register("users", handlerUsers)
 
 	// Parse command-line arguments
 	if len(os.Args) < 2 {
