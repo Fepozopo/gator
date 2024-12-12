@@ -20,26 +20,22 @@ func handlerAddFeed(s *state, cmd command) error {
 	feedName := cmd.args[0]
 	feedURL := cmd.args[1]
 
-	// Get the current user from the config
-	currentUser := s.cfg.CurrentUserName
-	if currentUser == "" {
-		return fmt.Errorf("no user logged in")
-	}
-
-	// Get the user from the database
-	user, err := s.db.GetUser(context.Background(), currentUser)
+	// Get the current user
+	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
 	if err != nil {
-		return fmt.Errorf("failed to find user: %w", err)
+		return fmt.Errorf("current user not found: %w", err)
 	}
 
 	// Create a new feed
+	now := time.Now()
+
 	feed := database.CreateFeedParams{
 		ID:        uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: now,
+		UpdatedAt: now,
 		Name:      feedName,
 		Url:       feedURL,
-		UserID:    user.ID,
+		UserID:    currentUser.ID,
 	}
 
 	newFeed, err := s.db.CreateFeed(context.Background(), feed)
@@ -47,12 +43,30 @@ func handlerAddFeed(s *state, cmd command) error {
 		return fmt.Errorf("failed to create feed: %w", err)
 	}
 
-	// Print the new feed details
-	fmt.Print("Feed created:\n")
-	fmt.Printf("ID: %s\n", newFeed.ID)
-	fmt.Printf("Name: %s\n", newFeed.Name)
-	fmt.Printf("URL: %s\n", newFeed.Url)
-	fmt.Printf("User ID: %s\n", newFeed.UserID)
+	// Automatically follow the created feed
+	_, err = s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: now,
+		UpdatedAt: now,
+		UserID:    currentUser.ID,
+		FeedID:    feed.ID,
+	})
+	if err != nil {
+		// Print the new feed details
+		fmt.Print("Feed created:\n")
+		fmt.Printf("ID: %s\n", newFeed.ID)
+		fmt.Printf("Name: %s\n", newFeed.Name)
+		fmt.Printf("URL: %s\n", newFeed.Url)
+		fmt.Printf("User ID: %s\n\n", newFeed.UserID)
+		fmt.Printf("Feed created, but failed to auto-follow: %v\n", err)
+	} else {
+		// Print the new feed details
+		fmt.Printf("Feed created and followed by %s:\n", currentUser.Name)
+		fmt.Printf("ID: %s\n", newFeed.ID)
+		fmt.Printf("Name: %s\n", newFeed.Name)
+		fmt.Printf("URL: %s\n", newFeed.Url)
+		fmt.Printf("User ID: %s\n", newFeed.UserID)
+	}
 
 	return nil
 }

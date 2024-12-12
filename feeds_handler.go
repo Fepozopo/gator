@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+// handlerFeeds prints all feeds with their associated user names to the console.
+// It takes no arguments, and returns an error if any arguments are passed.
 func handlerFeeds(s *state, cmd command) error {
 	// Ensure no arguments are passed
 	if len(cmd.args) > 0 {

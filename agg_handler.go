@@ -20,8 +20,8 @@ func handlerAgg(s *state, cmd command) error {
 	// Print the RSS feed to the console
 	fmt.Printf("Title: %s\n", feed.Title)
 	fmt.Printf("Description: %s\n", feed.Description)
-	fmt.Printf("Link: %s\n", feed.Link)
-	fmt.Printf("\nItems:\n")
+	fmt.Printf("Link: %s\n\n", feed.Link)
+	fmt.Printf("Items:\n")
 	for _, item := range feed.Items {
 		fmt.Printf("----- %s -----\n\n* %s\n\n* %s\n\n\n\n", item.Title, item.Description, item.Link)
 	}
