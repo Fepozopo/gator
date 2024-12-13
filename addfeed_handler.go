@@ -9,22 +9,16 @@ import (
 	"github.com/google/uuid"
 )
 
-// handlerAddFeed adds a new feed for the currently logged-in user. It takes a name
-// and a URL as arguments. If the user is not logged in, an error is returned.
-// If the feed is successfully added, the function prints the new feed details.
-func handlerAddFeed(s *state, cmd command) error {
+// handlerAddFeed creates a new feed in the database and automatically follows it
+// for the current user. It takes two arguments: the name of the feed, and the
+// URL of the feed. The function returns an error if the feed cannot be created.
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.args) < 2 {
 		return fmt.Errorf("usage: addfeed <name> <url>")
 	}
 
 	feedName := cmd.args[0]
 	feedURL := cmd.args[1]
-
-	// Get the current user
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("current user not found: %w", err)
-	}
 
 	// Create a new feed
 	now := time.Now()
@@ -35,7 +29,7 @@ func handlerAddFeed(s *state, cmd command) error {
 		UpdatedAt: now,
 		Name:      feedName,
 		Url:       feedURL,
-		UserID:    currentUser.ID,
+		UserID:    user.ID,
 	}
 
 	newFeed, err := s.db.CreateFeed(context.Background(), feed)
@@ -48,7 +42,7 @@ func handlerAddFeed(s *state, cmd command) error {
 		ID:        uuid.New(),
 		CreatedAt: now,
 		UpdatedAt: now,
-		UserID:    currentUser.ID,
+		UserID:    user.ID,
 		FeedID:    feed.ID,
 	})
 	if err != nil {
@@ -61,7 +55,7 @@ func handlerAddFeed(s *state, cmd command) error {
 		fmt.Printf("Feed created, but failed to auto-follow: %v\n", err)
 	} else {
 		// Print the new feed details
-		fmt.Printf("Feed created and followed by %s:\n", currentUser.Name)
+		fmt.Printf("Feed created and followed by %s:\n", user.Name)
 		fmt.Printf("ID: %s\n", newFeed.ID)
 		fmt.Printf("Name: %s\n", newFeed.Name)
 		fmt.Printf("URL: %s\n", newFeed.Url)

@@ -15,7 +15,7 @@ import (
 // looked up by name, and an error is returned if the current user does not
 // exist. The feed follow record is then created, and a success message is
 // printed with the user and feed details.
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 1 {
 		return fmt.Errorf("usage: follow <feed_url>")
 	}
@@ -27,12 +27,6 @@ func handlerFollow(s *state, cmd command) error {
 		return fmt.Errorf("feed not found: %w", err)
 	}
 
-	// Get the current user
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("current user not found: %w", err)
-	}
-
 	// Create a feed follow record
 	now := time.Now()
 
@@ -40,7 +34,7 @@ func handlerFollow(s *state, cmd command) error {
 		ID:        uuid.New(),
 		CreatedAt: now,
 		UpdatedAt: now,
-		UserID:    currentUser.ID,
+		UserID:    user.ID,
 		FeedID:    feed.ID,
 	})
 	if err != nil {
