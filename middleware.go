@@ -8,6 +8,9 @@ import (
 	"github.com/google/uuid"
 )
 
+// middlewareLoggedIn wraps a command handler with middleware that checks if the user is logged in before executing the handler.
+// If the user is not logged in, the middleware returns an error.
+// If the user is logged in, the middleware passes the state, command, and current user to the wrapped handler.
 func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
 	return func(s *state, cmd command) error {
 		// Fetch the current user's name from the config

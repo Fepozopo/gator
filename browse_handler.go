@@ -8,6 +8,11 @@ import (
 	"github.com/Fepozopo/gator/internal/database"
 )
 
+// handlerBrowse prints a list of the posts for the currently logged-in user.
+// If a single argument is provided, it is interpreted as an integer and used
+// as a limit for the number of posts to retrieve. If no argument is provided, a
+// default limit of 2 is used. The retrieved posts are printed with their title,
+// URL, description (if any), and publication date.
 func handlerBrowse(s *state, cmd command, user database.User) error {
 	limit := 2
 	// Try to convert the first argument to an integer
