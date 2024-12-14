@@ -1,4 +1,4 @@
-# RSS Aggregator
+# Gator
 
 A command-line RSS feed aggregator built in Go. This application allows users to add RSS feeds, follow feeds, fetch and display posts, and manage user accounts. It's designed to run continuously to scrape RSS feeds at regular intervals.
 
