@@ -21,6 +21,7 @@ type RSSItem struct {
 	Title       string `xml:"title"`
 	Description string `xml:"description"`
 	Link        string `xml:"link"`
+	PubDate     string `xml:"pubDate"`
 }
 
 // fetchFeed fetches an RSS feed from the given URL and parses it into an RSSFeed

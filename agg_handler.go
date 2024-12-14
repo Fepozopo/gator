@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Fepozopo/gator/internal/database"
+	"github.com/google/uuid"
 )
 
 // handlerAgg handles the "agg" command, which starts an RSS feed aggregation
@@ -51,9 +53,13 @@ func handlerAgg(s *state, cmd command) error {
 	}
 }
 
-// scrapeFeeds retrieves the next feed to be fetched from the database, marks it as fetched,
-// fetches the RSS feed from the feed's URL, and prints the feed's items to the console.
-// If there are no feeds to fetch, it returns without error. If any step fails, it returns an error.
+// scrapeFeeds runs the RSS feed aggregation process, which fetches feeds from
+// the database, marks them as fetched, fetches the feed content, and saves the
+// feed items to the database as posts. If an error occurs during the process,
+// it is propagated up the call stack.
+//
+// The function returns an error if any database query fails, or if the feed
+// content cannot be fetched.
 func scrapeFeeds(s *state) error {
 	// Get the next feed to fetch
 	feed, err := s.db.GetNextFeedToFetch(context.Background())
@@ -70,7 +76,7 @@ func scrapeFeeds(s *state) error {
 	err = s.db.MarkFeedFetched(context.Background(), database.MarkFeedFetchedParams{
 		LastFetchedAt: sql.NullTime{
 			Time:  now,
-			Valid: true, // Set to true because we're providing a value
+			Valid: true,
 		},
 		UpdatedAt: now,
 		ID:        feed.ID,
@@ -85,10 +91,39 @@ func scrapeFeeds(s *state) error {
 		return fmt.Errorf("failed to fetch feed from %s: %w", feed.Url, err)
 	}
 
-	// Print the feed's items
-	fmt.Printf("\nFetched feed: %s (%s)\n", feed.Name, feed.Url)
+	// Iterate over each item in an RSS feed and parse the published date of each item
 	for _, item := range rssFeed.Items {
-		fmt.Printf("* %s\n", item.Title)
+		publishedAt, err := time.Parse(time.RFC1123Z, item.PubDate)
+		if err != nil {
+			fmt.Printf("Failed to parse published date for %s: %v\n", item.Title, err)
+			publishedAt = time.Time{} // Default to zero value
+		}
+
+		// Convert item.Description to an sql.NullString
+		description := sql.NullString{}
+		if item.Description != "" {
+			description = sql.NullString{String: item.Description, Valid: true}
+		}
+
+		// Create a new post in the database
+		err = s.db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: description,
+			PublishedAt: sql.NullTime{Time: publishedAt, Valid: !publishedAt.IsZero()},
+			FeedID:      feed.ID,
+		})
+		// Check if the creation is successful, a duplicate, or any other error
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				fmt.Printf("\nPost with URL %s already exists. Skipping.\n", item.Link)
+				continue
+			}
+			return fmt.Errorf("failed to save post: %w", err)
+		}
 	}
 
 	return nil
